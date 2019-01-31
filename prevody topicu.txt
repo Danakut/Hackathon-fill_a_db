@@ -1,0 +1,10 @@
+ switch (topic) {
+            case "programuju": return =  "Programuju";
+            case "tvorimWeb": return "Tvořím web" ;
+            case "akademieProgramovani": return "Czechitas Nová Generace" ;
+            case "dalsi": result =  "Další";
+            case "milujuData": result =  "DataGirls";
+            case "testuju": result =  "Testuju";
+            case "jsemDigitalni": result =  "Jsem digitální!" ;
+            case "digitalAcademy": result =  "Digitální akademie" ;
+            default: result =  "";

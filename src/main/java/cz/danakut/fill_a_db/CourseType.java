@@ -4,8 +4,7 @@ public enum CourseType {
     WORKSHOP,
     DLOUHODOBY,
     INTENZIVNI,
-    AKCE,
-    NEURCENO;
+    AKCE;
 
 
     public static CourseType fromString(String typeString) {
@@ -15,6 +14,16 @@ public enum CourseType {
             case "Pravidelný": return DLOUHODOBY;
             case "Intenzivní": return INTENZIVNI;
             default: throw new IllegalArgumentException("Unknown status: " + typeString);
+        }
+    }
+
+    public String toDatabaseString() {
+
+        switch (this) {
+            case WORKSHOP: return "workshop";
+            case DLOUHODOBY: return "dlouhodoby";
+            case INTENZIVNI: return "intenzivni";
+            default: return null;
         }
     }
 

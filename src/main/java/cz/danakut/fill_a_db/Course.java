@@ -1,18 +1,15 @@
 package cz.danakut.fill_a_db;
 
-import java.sql.Time;
-import java.time.LocalDate;
-import java.time.LocalTime;
-import java.util.Date;
+import java.sql.Date;
 
 public class Course {
 
     int id;
     CourseType type;
-    LocalDate startDate;
-    LocalDate endDate;
-    LocalTime startTime;
-    LocalTime endTime;
+    Date startDate;
+    Date endDate;
+    String startTime;
+    String endTime;
     String topic;
     int knowledgeLevel;
     String name;
@@ -33,17 +30,14 @@ public class Course {
 
         result += name + "\n";
 
-        if (type != null) {
-            result += type + ", ";
 
-            if (type == CourseType.WORKSHOP || type == CourseType.AKCE) {
-                result += "datum: " + startDate + ", " + startTime + " - " + endTime + "\n";
-            } else {
-                result += "od: " + startDate + ", do: " + endDate + "\n";
-                result += "čas: " + startTime + " - " + endTime + "\n";
-            }
+        result += type + ", ";
+
+        if (type == CourseType.WORKSHOP || type == CourseType.AKCE) {
+            result += "datum: " + startDate + ", " + startTime + " - " + endTime + "\n";
         } else {
-            result += "type NENI";
+            result += "od: " + startDate + ", do: " + endDate + "\n";
+            result += "čas: " + startTime + " - " + endTime + "\n";
         }
 
         result += "místo konání: " + location + ", ";
@@ -71,7 +65,7 @@ public class Course {
 
         if ((this.name.equals(thatObj.name))
                 && this.startDate.equals(thatObj.startDate)
-                && (this.startTime == thatObj.startTime)
+                && this.startTime.equals(thatObj.startTime)
                 && this.location.equals(thatObj.location)) {
             return true;
         }
@@ -85,35 +79,6 @@ public class Course {
         int dateHash = startDate.hashCode();
         int locationHash = location.hashCode();
         return nameHash * dateHash * locationHash;
-    }
-
-    public void setTopic(String topicFromWeb) {
-        String result;
-        switch (topicFromWeb) {
-            case "programuju": result =  "Programuju";
-            case "tvorimWeb": result =  "Tvořím web" ;
-            case "akademieProgramovani": result =  "Czechitas Nová Generace" ;
-            case "dalsi": result =  "Další";
-            case "milujuData": result =  "DataGirls";
-            case "testuju": result =  "Testuju";
-            case "jsemDigitalni": result =  "Jsem digitální!" ;
-            case "digitalAcademy": result =  "Digitální akademie" ;
-            default: result =  "";
-        }
-
-        this.topic = result;
-    }
-
-    public void setKnowledgeLevel(String level) {
-        int result;
-        switch (level) {
-            case "zadne": result = 0;
-            case "zacatecnik": result = 1;
-            case "pokrocily": result = 2 ;
-            default: result = 3;
-        }
-
-        this.knowledgeLevel = result;
     }
 
 }
