@@ -8,8 +8,6 @@ import org.jsoup.select.Elements;
 
 import java.io.IOException;
 import java.sql.Date;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -17,9 +15,8 @@ public class PageScraper {
 
     static Pattern hoursPattern = Pattern.compile("\\d{1,2}:\\d{1,2}");
 
-    public List<Course> parsePage(String url) {
+    public Elements getElementsforScraping(String url) {
 
-        List<Course> list = new ArrayList<>();
         Document parsedDocument = null;
 
         try {
@@ -30,46 +27,50 @@ public class PageScraper {
 
 
         Elements calendarEvents = parsedDocument.select(".list-item"); //ArrayList
-        for (Element calendarEvent : calendarEvents) {
-//            Element calendarEvent = calendarEvents.get(4);
-            Course newCourse = new Course();
-            Attributes attributes = calendarEvent.attributes();
+        return calendarEvents;
+    }
 
-            newCourse.type = scrapeType(calendarEvent);
+    public Course scrapeCoursePartially(Element calendarEvent) {
+        Course newCourse = new Course();
+        newCourse.name = scrapeName(calendarEvent);
+        newCourse.startDate = scrapeStartDay(calendarEvent);
+        newCourse.quickLocation = scrapeQuickLocation(calendarEvent);
 
-            newCourse.startDate = scrapeStartDay(calendarEvent);
+        return newCourse;
+    }
 
-            Element duration = calendarEvent.selectFirst(".day");
-            newCourse.endDate = scrapeEndDay(duration);
-            newCourse.startTime = scrapeHours(duration)[0];
-            newCourse.endTime = scrapeHours(duration)[1];
+    public Course scrapeCourseWhole(Course partiallyScrapedCourse, Element calendarEvent) {
+        Attributes attributes = calendarEvent.attributes();
+        Element duration = calendarEvent.selectFirst(".day");
 
-            newCourse.topic = scrapeTopic(attributes);
+        Course newCourse = partiallyScrapedCourse;
 
-            newCourse.knowledgeLevel = scrapeKnowledgeLevel(calendarEvent);
+        newCourse.type = scrapeType(calendarEvent);
+        newCourse.endDate = scrapeEndDay(duration);
+        newCourse.startTime = scrapeHours(duration)[0];
+        newCourse.endTime = scrapeHours(duration)[1];
+        newCourse.topic = scrapeTopic(calendarEvent);
+        newCourse.knowledgeLevel = scrapeKnowledgeLevel(calendarEvent);
+        newCourse.status = scrapeStatus(calendarEvent);
+        newCourse.instructor = "";
+        newCourse.link = scrapeLink(attributes);
+        newCourse.description = scrapeDescription(calendarEvent);
+        newCourse.location = scrapeLocation(newCourse.link);
 
-            newCourse.name = scrapeName(calendarEvent);
-
-            newCourse.status = scrapeStatus(calendarEvent);
-
-            newCourse.location = scrapeLocation(calendarEvent);
-
-            newCourse.instructor = "";
-
-            newCourse.link = scrapeLink(attributes);
-
-            newCourse.description = scrapeDescription(calendarEvent);
-
-            list.add(newCourse);
-            System.out.println("Zpracováno: položka č. " + calendarEvents.indexOf(calendarEvent));
-        }
-
-        return list;
+        return newCourse;
     }
 
     private static CourseType scrapeType(Element calendarEvent) {
-        String typeString = calendarEvent.selectFirst(".intesity span").text();
-        return CourseType.fromString(typeString);
+        String type = calendarEvent.selectFirst(".intesity span").text();
+        if (type.equals("Jednodenní")) {
+            return CourseType.WORKSHOP;
+        } else if (type.equals("Pravidelný")) {
+            return CourseType.DLOUHODOBY;
+        } else if (type.equals("Intenzivní")) {
+            return CourseType.INTENZIVNI;
+        } else {
+            return CourseType.NEURCENO;
+        }
     }
 
     private static Date scrapeStartDay(Element calendarEvent) {
@@ -80,16 +81,13 @@ public class PageScraper {
     }
 
     private static Date scrapeEndDay(Element duration) {
-        if (duration.is(".single")) {
-            return null;
-
-        } else if (duration.is(".multi")) {
+        if (duration.is(".multi")) {
             String dayString = duration.select(".dday").last().text().trim();
             String day = dayString.substring(0, dayString.length() - 1);
-            String[] monthyear = duration.select(".dmonth").last().text().trim().split(" ");
-            String month = monthyear[0].substring(0, monthyear[0].length() - 1);
-            String complete = monthyear[1] + "-" + MonthConverter.fromString(month) + "-" + day;
-            return Date.valueOf(complete);
+            String monthyear = duration.select(".dmonth").last().text().trim();
+            String month = monthyear.substring(0,3);
+            String year = monthyear.substring(5);
+            return Date.valueOf(year + "-" + MonthConverter.fromString(month) + "-" + day);
         }
 
         return null;
@@ -100,8 +98,8 @@ public class PageScraper {
 
         Element dayAndHoursDiv = duration.selectFirst(".hours");
         if (dayAndHoursDiv != null) {
-            String dayAndHours[] = dayAndHoursDiv.text().trim().split(",");
-            Matcher matcher = hoursPattern.matcher(dayAndHours[1]);
+            String dayAndHours = dayAndHoursDiv.text();
+            Matcher matcher = hoursPattern.matcher(dayAndHours);
             matcher.find();
             hours[0] = matcher.group();
             matcher.find();
@@ -111,8 +109,8 @@ public class PageScraper {
         return hours;
     }
 
-    private static String scrapeTopic(Attributes attributes) {
-        return attributes.get("class").substring(16);
+    private static String scrapeTopic(Element calendarEvent) {
+        return calendarEvent.selectFirst(".grid-icon span").text().trim();
     }
 
     private static int scrapeKnowledgeLevel(Element calendarEvent) {
@@ -130,16 +128,24 @@ public class PageScraper {
     }
 
     private static String scrapeName(Element calendarEvent) {
-        return calendarEvent.selectFirst(".eventName div").text();
+        return calendarEvent.selectFirst(".eventName div").text().trim();
     }
 
     private static RegistrationStatus scrapeStatus(Element calendarEvent) {
         String[] registrationInfo = calendarEvent.selectFirst(".eventStatus").className().split("\\s+");
-        return RegistrationStatus.fromString(registrationInfo[1]);
+        String status = registrationInfo[1];
+
+        switch (status) {
+            case "registraceOtevrena": return RegistrationStatus.OTEVRENA;
+            case "konecRegistrace" : return RegistrationStatus.UZAVRENA;
+            case "dejteMiVedet" : return RegistrationStatus.POZDEJI;
+            case "bezRegistrace" : return RegistrationStatus.NETREBA;
+            default: return RegistrationStatus.NEZJISTENO;
+        }
     }
 
-    private static String scrapeLocation(Element calendarEvent) {
-        return calendarEvent.selectFirst(".eventPlace div").text();
+    private static String scrapeQuickLocation(Element calendarEvent) {
+        return calendarEvent.selectFirst(".eventPlace div").text().trim();
     }
 
     private static String scrapeLink(Attributes attributes) {
@@ -148,5 +154,38 @@ public class PageScraper {
 
     private static String scrapeDescription(Element calendarEvent) {
         return calendarEvent.selectFirst(".eventDesc").text().trim();
+    }
+
+    private static Location scrapeLocation(String courseUrl) {
+        Document parsedDocument = null;
+        try {
+            parsedDocument = Jsoup.connect(courseUrl).get();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        Element addressDiv = parsedDocument.getElementsByAttributeValue("itemtype", "http://schema.org/Organization").first();
+        Location location = new Location();
+
+        Element nameDiv = addressDiv.getElementsByAttributeValue("itemprop", "name").first();
+        if (nameDiv != null) {
+            location.name = nameDiv.text().trim();
+        }
+
+        Element streetDiv = addressDiv.getElementsByAttributeValue("itemprop", "streetAddress").first();
+        if (streetDiv != null) {
+            location.street = streetDiv.text().trim();
+        }
+
+        Element cityDiv = addressDiv.getElementsByAttributeValue("itemprop", "addressLocality").first();
+        if (cityDiv != null) {
+            location.city = cityDiv.text().trim();
+        }
+
+        Element postalDiv = addressDiv.getElementsByAttributeValue("itemprop", "postalCode").first();
+        if (postalDiv != null) {
+            location.postalCode = postalDiv.text().trim();
+        }
+
+        return location;
     }
 }

@@ -14,10 +14,11 @@ public class Course {
     int knowledgeLevel;
     String name;
     RegistrationStatus status;
-    String location;
+    String quickLocation;
     String instructor;
     String link;
     String description;
+    Location location;
     Date lastUpdate;
 
     public Course() {
@@ -40,7 +41,7 @@ public class Course {
             result += "čas: " + startTime + " - " + endTime + "\n";
         }
 
-        result += "místo konání: " + location + ", ";
+        result += "místo konání: " + quickLocation + ", ";
 
         result += "lektor: " + instructor + "\n";
 
@@ -66,7 +67,7 @@ public class Course {
         if ((this.name.equals(thatObj.name))
                 && this.startDate.equals(thatObj.startDate)
                 && this.startTime.equals(thatObj.startTime)
-                && this.location.equals(thatObj.location)) {
+                && this.quickLocation.equals(thatObj.quickLocation)) {
             return true;
         }
 
@@ -77,7 +78,7 @@ public class Course {
     public int hashCode() {
         int nameHash = name.hashCode();
         int dateHash = startDate.hashCode();
-        int locationHash = location.hashCode();
+        int locationHash = quickLocation.hashCode();
         return nameHash * dateHash * locationHash;
     }
 
