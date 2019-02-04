@@ -1,6 +1,7 @@
 package cz.danakut.fill_a_db;
 
 import java.sql.Date;
+import java.util.List;
 
 public class Course {
 
@@ -15,7 +16,7 @@ public class Course {
     String name;
     RegistrationStatus status;
     String quickLocation;
-    String instructor;
+    List<String> instructor;
     String link;
     String description;
     Location location;

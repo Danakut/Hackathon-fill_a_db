@@ -8,12 +8,24 @@ import org.jsoup.select.Elements;
 
 import java.io.IOException;
 import java.sql.Date;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class PageScraper {
 
     static Pattern hoursPattern = Pattern.compile("\\d{1,2}:\\d{1,2}");
+
+    Elements scrapedElements;
+
+    public PageScraper() {
+
+    }
+
+    public PageScraper(String urlToParse) {
+        scrapedElements = getElementsforScraping(urlToParse);
+    }
 
     public Elements getElementsforScraping(String url) {
 
@@ -24,7 +36,6 @@ public class PageScraper {
         } catch (IOException e) {
             e.printStackTrace();
         }
-
 
         Elements calendarEvents = parsedDocument.select(".list-item"); //ArrayList
         return calendarEvents;
@@ -52,15 +63,25 @@ public class PageScraper {
         newCourse.topic = scrapeTopic(calendarEvent);
         newCourse.knowledgeLevel = scrapeKnowledgeLevel(calendarEvent);
         newCourse.status = scrapeStatus(calendarEvent);
-        newCourse.instructor = "";
         newCourse.link = scrapeLink(attributes);
         newCourse.description = scrapeDescription(calendarEvent);
-        newCourse.location = scrapeLocation(newCourse.link);
+
+
+        Document parsedDocument = null;
+        try {
+            parsedDocument = Jsoup.connect(newCourse.link).get();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        newCourse.location = scrapeLocation(parsedDocument);
+        newCourse.instructor = scrapeInstructor(parsedDocument);
+
+        System.out.println(newCourse.name + ", instruktor " + newCourse.instructor);
 
         return newCourse;
     }
 
-    private static CourseType scrapeType(Element calendarEvent) {
+    private CourseType scrapeType(Element calendarEvent) {
         String type = calendarEvent.selectFirst(".intesity span").text();
         if (type.equals("Jednodenní")) {
             return CourseType.WORKSHOP;
@@ -73,14 +94,14 @@ public class PageScraper {
         }
     }
 
-    private static Date scrapeStartDay(Element calendarEvent) {
+    private Date scrapeStartDay(Element calendarEvent) {
         String string = calendarEvent.selectFirst(".date").text();
         // convert the string to a proper format for Date.valuoOf()
         return Date.valueOf(string.replaceAll("/", "-"));
 
     }
 
-    private static Date scrapeEndDay(Element duration) {
+    private Date scrapeEndDay(Element duration) {
         if (duration.is(".multi")) {
             String dayString = duration.select(".dday").last().text().trim();
             String day = dayString.substring(0, dayString.length() - 1);
@@ -93,7 +114,7 @@ public class PageScraper {
         return null;
     }
 
-    private static String[] scrapeHours(Element duration) {
+    private String[] scrapeHours(Element duration) {
         String[] hours = new String[2];
 
         Element dayAndHoursDiv = duration.selectFirst(".hours");
@@ -109,11 +130,11 @@ public class PageScraper {
         return hours;
     }
 
-    private static String scrapeTopic(Element calendarEvent) {
+    private String scrapeTopic(Element calendarEvent) {
         return calendarEvent.selectFirst(".grid-icon span").text().trim();
     }
 
-    private static int scrapeKnowledgeLevel(Element calendarEvent) {
+    private int scrapeKnowledgeLevel(Element calendarEvent) {
         String levelInfo = calendarEvent.selectFirst(".eventDifficulty").className();
         String level = levelInfo.substring(16,levelInfo.length() - 6 );
         int result;
@@ -127,11 +148,11 @@ public class PageScraper {
         return result;
     }
 
-    private static String scrapeName(Element calendarEvent) {
+    private String scrapeName(Element calendarEvent) {
         return calendarEvent.selectFirst(".eventName div").text().trim();
     }
 
-    private static RegistrationStatus scrapeStatus(Element calendarEvent) {
+    private RegistrationStatus scrapeStatus(Element calendarEvent) {
         String[] registrationInfo = calendarEvent.selectFirst(".eventStatus").className().split("\\s+");
         String status = registrationInfo[1];
 
@@ -144,25 +165,20 @@ public class PageScraper {
         }
     }
 
-    private static String scrapeQuickLocation(Element calendarEvent) {
+    private String scrapeQuickLocation(Element calendarEvent) {
         return calendarEvent.selectFirst(".eventPlace div").text().trim();
     }
 
-    private static String scrapeLink(Attributes attributes) {
+    private String scrapeLink(Attributes attributes) {
         return attributes.get("href");
     }
 
-    private static String scrapeDescription(Element calendarEvent) {
+    private String scrapeDescription(Element calendarEvent) {
         return calendarEvent.selectFirst(".eventDesc").text().trim();
     }
 
-    private static Location scrapeLocation(String courseUrl) {
-        Document parsedDocument = null;
-        try {
-            parsedDocument = Jsoup.connect(courseUrl).get();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+    private Location scrapeLocation(Document parsedDocument) {
+
         Element addressDiv = parsedDocument.getElementsByAttributeValue("itemtype", "http://schema.org/Organization").first();
         Location location = new Location();
 
@@ -187,5 +203,19 @@ public class PageScraper {
         }
 
         return location;
+    }
+
+    private List<String> scrapeInstructor(Document parsedDocument) {
+        List<String> list = new ArrayList<>();
+
+        Element section = parsedDocument.selectFirst(".tym");
+        if (section != null) {
+            Elements instructorsP = section.select(".user-name");
+            if (instructorsP != null) {
+                for (Element instructor : instructorsP)
+                    list.add(instructor.ownText().trim());
+            }
+        }
+        return list;
     }
 }

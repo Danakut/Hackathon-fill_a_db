@@ -54,7 +54,7 @@ public class DataInserter {
             insertStatement.setString(8, course.name);
             insertStatement.setString(9, course.status.toDatabaseString());
             insertStatement.setString(10, course.quickLocation);
-            insertStatement.setString(11, course.instructor);
+//            insertStatement.setString(11, course.instructor);
             insertStatement.setString(12, course.link);
             insertStatement.setString(13, course.description);
 

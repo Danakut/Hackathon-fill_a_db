@@ -4,8 +4,7 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import java.util.regex.Pattern;
 
 public class App {
@@ -16,29 +15,34 @@ public class App {
     public static void main(String[] args) throws SQLException {
 
         List<Course> firstList = new ArrayList<>();
-        List<Course> secondList = new ArrayList<>();
-        PageScraper scraper = new PageScraper();
+
+        PageScraper scraper = new PageScraper(url);
         DataInserter inserter = new DataInserter();
+        Map<Course, Element> newCourses = new LinkedHashMap<>();
 
-        Elements courseElements = scraper.getElementsforScraping(url);
-        int test = 0;
 
-        for (Element courseElement : courseElements) {
+        for (Element courseElement : scraper.scrapedElements) {
             Course partialCourse = scraper.scrapeCoursePartially(courseElement);
             firstList.add(partialCourse);
-            test++;
-            System.out.println("Partial course added." + test);
 
-            //splnena podminka, ze kurz dosud nebyl ulozen v databazi
-            Course completedCourse = scraper.scrapeCourseWhole(partialCourse, courseElement);
-            secondList.add(completedCourse);
-            System.out.println("Whole course added." + test);
+            //query database
+
+
+            //if the course is not in database yet
+            newCourses.put(partialCourse, courseElement);
         }
 
-        int listSize = firstList.size();
-        System.out.println("1st list is " + listSize + " courses big.");
-        listSize = secondList.size();
-        System.out.println("2nd list is " + listSize + " courses big.");
+        //later
+        List<Course> secondList = new ArrayList<>();
+        for (Course course : newCourses.keySet()) {
+            Course completeCourse = scraper.scrapeCourseWhole(course, newCourses.get(course));
+            //this is a list of courses to insert into database
+            secondList.add(completeCourse);
+
+        }
+
+        System.out.println("");
+        System.out.println("");
 
     }
 }
