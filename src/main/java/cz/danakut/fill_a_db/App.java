@@ -14,8 +14,6 @@ public class App {
 
     public static void main(String[] args) throws SQLException {
 
-        List<Course> firstList = new ArrayList<>();
-
         PageScraper scraper = new PageScraper(url);
         DataInserter inserter = new DataInserter();
         Map<Course, Element> newCourses = new LinkedHashMap<>();
@@ -23,26 +21,34 @@ public class App {
 
         for (Element courseElement : scraper.scrapedElements) {
             Course partialCourse = scraper.scrapeCoursePartially(courseElement);
-            firstList.add(partialCourse);
 
             //query database
-
+            int inDatabase = inserter.findInDatabase(partialCourse);
 
             //if the course is not in database yet
-            newCourses.put(partialCourse, courseElement);
+            if (inDatabase == -1) {
+                newCourses.put(partialCourse, courseElement);
+            }
         }
 
         //later
-        List<Course> secondList = new ArrayList<>();
+        List<Course> courseList = new ArrayList<>();
         for (Course course : newCourses.keySet()) {
             Course completeCourse = scraper.scrapeCourseWhole(course, newCourses.get(course));
             //this is a list of courses to insert into database
-            secondList.add(completeCourse);
-
+            courseList.add(completeCourse);
         }
 
-        System.out.println("");
-        System.out.println("");
+        //insert from list to database
+        inserter.openConnection();
+        int coursesInserted = 0;
+        for (Course course : courseList) {
+            inserter.insertCourse(course);
+            coursesInserted++;
+        }
+        inserter.closeConnection();
+
+        System.out.println("Zapsano " + coursesInserted + "kurzu.");
 
     }
 }

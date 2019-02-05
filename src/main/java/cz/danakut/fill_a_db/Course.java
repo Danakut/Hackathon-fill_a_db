@@ -16,10 +16,10 @@ public class Course {
     String name;
     RegistrationStatus status;
     String quickLocation;
-    List<String> instructor;
+    Location location;
+    List<String> instructors;
     String link;
     String description;
-    Location location;
     Date lastUpdate;
 
     public Course() {
@@ -44,7 +44,7 @@ public class Course {
 
         result += "místo konání: " + quickLocation + ", ";
 
-        result += "lektor: " + instructor + "\n";
+        result += "lektor: " + instructors + "\n";
 
         result += "odkaz na web: " + link + "\n";
 

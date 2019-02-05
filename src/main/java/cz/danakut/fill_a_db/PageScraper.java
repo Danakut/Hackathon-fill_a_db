@@ -73,10 +73,10 @@ public class PageScraper {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        newCourse.location = scrapeLocation(parsedDocument);
-        newCourse.instructor = scrapeInstructor(parsedDocument);
+        newCourse.location = scrapeLocation(parsedDocument, newCourse.quickLocation);
+        newCourse.instructors = scrapeInstructor(parsedDocument);
 
-        System.out.println(newCourse.name + ", instruktor " + newCourse.instructor);
+        System.out.println(newCourse.name + ", instruktor " + newCourse.instructors);
 
         return newCourse;
     }
@@ -177,10 +177,11 @@ public class PageScraper {
         return calendarEvent.selectFirst(".eventDesc").text().trim();
     }
 
-    private Location scrapeLocation(Document parsedDocument) {
+    private Location scrapeLocation(Document parsedDocument, String quickLocation) {
+        Location location = new Location();
+        location.quickName = quickLocation;
 
         Element addressDiv = parsedDocument.getElementsByAttributeValue("itemtype", "http://schema.org/Organization").first();
-        Location location = new Location();
 
         Element nameDiv = addressDiv.getElementsByAttributeValue("itemprop", "name").first();
         if (nameDiv != null) {
