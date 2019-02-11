@@ -25,12 +25,24 @@ public class DatabaseRecorder implements CourseRecorder{
     public int findCourse(Course course) throws SQLException {
         int id = -1;
 
-        String foundInDatabaseString = "SELECT id FROM courses WHERE name = ? AND startDate = ? AND startTime = ? AND quickLocation = ?";
-        PreparedStatement stmnt = this.conn.prepareStatement(foundInDatabaseString);
+        //solves the problem of startTime == null
+        String findString;
+        if (course.startTime == null) {
+            findString = "SELECT id FROM courses WHERE name = ? AND startDate = ? AND startTime IS NULL AND quickLocation = ?";
+        } else {
+            findString = "SELECT id FROM courses WHERE name = ? AND startDate = ? AND startTime = ? AND quickLocation = ?";
+        }
+        PreparedStatement stmnt = this.conn.prepareStatement(findString);
         stmnt.setString(1, course.name);
         stmnt.setDate(2, course.startDate);
-        stmnt.setString(3, course.startTime);
-        stmnt.setString(4, course.quickLocation);
+        if (course.startTime == null) {
+            stmnt.setString(3, course.quickLocation);
+
+        } else {
+            stmnt.setString(3, course.startTime);
+            stmnt.setString(4, course.quickLocation);
+        }
+
         ResultSet results = stmnt.executeQuery();
         if (results.next()) {
             id = results.getInt("id");

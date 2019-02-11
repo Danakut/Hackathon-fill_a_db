@@ -21,26 +21,25 @@ public class App {
         Map<Course, Element> newCourses = new LinkedHashMap<>();
 
 
-//        for (Element courseElement : scraper.scrapedElements) {
-//            Course partialCourse = scraper.scrapeCoursePartially(courseElement);
-//
-//            //query database
-//            int inDatabase = inserter.findCourse(partialCourse);
-//
-//            //if the course is not in database yet
-//            if (inDatabase == -1) {
-//                newCourses.put(partialCourse, courseElement);
-//            }
-//        }
+        for (Element courseElement : scraper.scrapedElements) {
+            Course partialCourse = scraper.scrapeCoursePartially(courseElement);
 
-        //later
+            //query database
+            int inDatabase = inserter.findCourse(partialCourse);
+
+            //if the course is not in database yet
+            if (inDatabase == -1) {
+                newCourses.put(partialCourse, courseElement);
+            }
+        }
+
+        //proceed with deep scraping of new courses that are not yet recorded in the database
         List<Course> courseList = new ArrayList<>();
-//        for (Course course : newCourses.keySet()) {
-//            Course completeCourse = scraper.scrapeCourseWhole(course, newCourses.get(course));
-//            //this is a list of courses to insert into database
-//            courseList.add(completeCourse);
-//        }
-        courseList.add(makeSampleCourse());
+        for (Course course : newCourses.keySet()) {
+            Course completeCourse = scraper.scrapeCourseWhole(course, newCourses.get(course));
+            //this is a list of courses to insert into database
+            courseList.add(completeCourse);
+        }
 
         //insert from list to database
         int coursesInserted = 0;
