@@ -1,6 +1,7 @@
 package cz.danakut.fill_a_db;
 
 import java.sql.Date;
+import java.sql.Timestamp;
 import java.util.List;
 
 public class Course {
@@ -20,7 +21,7 @@ public class Course {
     List<String> instructors;
     String link;
     String description;
-    Date lastUpdate;
+    Timestamp lastUpdate;
 
     public Course() {
 
@@ -28,6 +29,14 @@ public class Course {
 
     @Override
     public String toString() {
+        String result = id + "|" + type + "|" + startDate + "|" + endDate + "|" + startTime + "|" + endTime + "|" + topic + "|" +
+                knowledgeLevel + "|" + name + "|" + status + "|" + quickLocation + "|" + location + "|" + instructors + "|" +
+                link + "|" + description + "|" + lastUpdate + "||";
+
+        return result;
+    }
+
+    public String toLongString() {
         String result = topic + ", úroveň " + knowledgeLevel + ", název akce: ";
 
         result += name + "\n";

@@ -42,9 +42,12 @@ public class PageScraper {
     }
 
     public Course scrapeCoursePartially(Element calendarEvent) {
+        Element duration = calendarEvent.selectFirst(".day");
+
         Course newCourse = new Course();
         newCourse.name = scrapeName(calendarEvent);
         newCourse.startDate = scrapeStartDay(calendarEvent);
+        newCourse.startTime = scrapeHours(duration)[0];
         newCourse.quickLocation = scrapeQuickLocation(calendarEvent);
 
         return newCourse;
@@ -58,7 +61,6 @@ public class PageScraper {
 
         newCourse.type = scrapeType(calendarEvent);
         newCourse.endDate = scrapeEndDay(duration);
-        newCourse.startTime = scrapeHours(duration)[0];
         newCourse.endTime = scrapeHours(duration)[1];
         newCourse.topic = scrapeTopic(calendarEvent);
         newCourse.knowledgeLevel = scrapeKnowledgeLevel(calendarEvent);
