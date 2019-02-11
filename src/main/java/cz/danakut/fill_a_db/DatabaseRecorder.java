@@ -130,10 +130,18 @@ public class DatabaseRecorder implements CourseRecorder{
     private String typeToString(CourseType type) {
         String courseType = "";
         switch (type) {
-            case WORKSHOP: courseType = "workshop";
-            case DLOUHODOBY: courseType = "dlouhodoby";
-            case INTENZIVNI: courseType = "intenzivni";
-            case AKCE: courseType = "akce";
+            case WORKSHOP:
+                courseType = "workshop";
+                break;
+            case DLOUHODOBY:
+                courseType = "dlouhodoby";
+                break;
+            case INTENZIVNI:
+                courseType = "intenzivni";
+                break;
+            case AKCE:
+                courseType = "akce";
+                break;
             case NEURCENO: courseType = "neurceno";
         }
 
@@ -143,10 +151,18 @@ public class DatabaseRecorder implements CourseRecorder{
     private String statusToString(RegistrationStatus status) {
         String courseStatus = "";
         switch (status) {
-            case OTEVRENA: courseStatus = "otevrena";
-            case UZAVRENA: courseStatus = "uzavrena";
-            case POZDEJI: courseStatus = "pozdeji";
-            case NETREBA: courseStatus = "netreba";
+            case OTEVRENA:
+                courseStatus = "otevrena";
+                break;
+            case UZAVRENA:
+                courseStatus = "uzavrena";
+                break;
+            case POZDEJI:
+                courseStatus = "pozdeji";
+                break;
+            case NETREBA:
+                courseStatus = "netreba";
+                break;
             case NEZJISTENO: courseStatus = "nezjisteno";
         }
 
