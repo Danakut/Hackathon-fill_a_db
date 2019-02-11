@@ -141,9 +141,15 @@ public class PageScraper {
         String level = levelInfo.substring(16,levelInfo.length() - 6 );
         int result;
         switch (level) {
-            case "zadne": result = 0;
-            case "zacatecnik": result = 1;
-            case "pokrocily": result = 2 ;
+            case "zadne":
+                result = 0;
+                break;
+            case "zacatecnik":
+                result = 1;
+                break;
+            case "pokrocily":
+                result = 2 ;
+                break;
             default: result = 3;
         }
 

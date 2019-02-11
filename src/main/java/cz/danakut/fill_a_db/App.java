@@ -19,7 +19,7 @@ public class App {
         PageScraper scraper = new PageScraper(url);
         DatabaseRecorder inserter = new DatabaseRecorder();
         Map<Course, Element> newCourses = new LinkedHashMap<>();
-
+        int coursesInserted = 0;
 
         for (Element courseElement : scraper.scrapedElements) {
             Course partialCourse = scraper.scrapeCoursePartially(courseElement);
@@ -29,28 +29,15 @@ public class App {
 
             //if the course is not in database yet
             if (inDatabase == -1) {
-                newCourses.put(partialCourse, courseElement);
+                Course completeCourse = scraper.scrapeCourseWhole(partialCourse, courseElement);
+                inserter.insertCourse(completeCourse);
+                coursesInserted++;
             }
         }
 
-        //proceed with deep scraping of new courses that are not yet recorded in the database
-        List<Course> courseList = new ArrayList<>();
-        for (Course course : newCourses.keySet()) {
-            Course completeCourse = scraper.scrapeCourseWhole(course, newCourses.get(course));
-            //this is a list of courses to insert into database
-            courseList.add(completeCourse);
-        }
-
-        //insert from list to database
-        int coursesInserted = 0;
-        for (Course course : courseList) {
-            inserter.insertCourse(course);
-            coursesInserted++;
-        }
         inserter.closeConnection();
 
-        System.out.println("Zapsano " + coursesInserted + "  kurzu.");
-
+        System.out.println("Zapsano " + coursesInserted + " kurzu.");
     }
 
     private static Course makeSampleCourse() {
