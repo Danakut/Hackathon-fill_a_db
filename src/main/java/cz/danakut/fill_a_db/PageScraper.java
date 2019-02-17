@@ -18,8 +18,8 @@ public class PageScraper {
     static Pattern hoursPattern = Pattern.compile("\\d{1,2}:\\d{1,2}");
 
     Elements scrapedElements;
-    private Element currentElement;
-    private Course currentCourse;
+    private Element currentElement;  //for debugging purposes
+    private Course currentCourse;  //for debugging purposes
 
     public PageScraper() {
 
