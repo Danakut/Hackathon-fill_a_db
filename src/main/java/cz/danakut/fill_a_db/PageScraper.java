@@ -18,6 +18,8 @@ public class PageScraper {
     static Pattern hoursPattern = Pattern.compile("\\d{1,2}:\\d{1,2}");
 
     Elements scrapedElements;
+    private Element currentElement;
+    private Course currentCourse;
 
     public PageScraper() {
 
@@ -42,9 +44,11 @@ public class PageScraper {
     }
 
     public Course scrapeCoursePartially(Element calendarEvent) {
+        currentElement = calendarEvent;
         Element duration = calendarEvent.selectFirst(".day");
 
         Course newCourse = new Course();
+        currentCourse = newCourse;
         newCourse.name = scrapeName(calendarEvent);
         newCourse.startDate = scrapeStartDay(calendarEvent);
         newCourse.startTime = scrapeHours(duration)[0];
@@ -66,8 +70,6 @@ public class PageScraper {
         newCourse.knowledgeLevel = scrapeKnowledgeLevel(calendarEvent);
         newCourse.status = scrapeStatus(calendarEvent);
         newCourse.link = scrapeLink(attributes);
-        newCourse.description = scrapeDescription(calendarEvent);
-
 
         Document parsedDocument = null;
         try {
@@ -84,7 +86,8 @@ public class PageScraper {
     }
 
     private CourseType scrapeType(Element calendarEvent) {
-        String type = calendarEvent.selectFirst(".intesity span").text();
+        String type = calendarEvent.selectFirst(".intesity").text();
+
         if (type.equals("Jednodenní")) {
             return CourseType.WORKSHOP;
         } else if (type.equals("Pravidelný")) {
