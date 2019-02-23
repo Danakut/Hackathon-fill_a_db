@@ -226,7 +226,6 @@ public class DatabaseRecorder implements CourseRecorder{
         }
 
         stmnt.close();
-
         return id;
     }
 
@@ -250,6 +249,5 @@ public class DatabaseRecorder implements CourseRecorder{
             }
         }
     }
-
 
 }

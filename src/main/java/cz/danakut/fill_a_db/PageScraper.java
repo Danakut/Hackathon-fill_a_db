@@ -18,8 +18,6 @@ public class PageScraper {
     static Pattern hoursPattern = Pattern.compile("\\d{1,2}:\\d{1,2}");
 
     Elements scrapedElements;
-    private Element currentElement;  //for debugging purposes
-    private Course currentCourse;  //for debugging purposes
 
     public PageScraper() {
 
@@ -44,11 +42,9 @@ public class PageScraper {
     }
 
     public Course scrapeCoursePartially(Element calendarEvent) {
-        currentElement = calendarEvent;
         Element duration = calendarEvent.selectFirst(".day");
 
         Course newCourse = new Course();
-        currentCourse = newCourse;
         newCourse.name = scrapeName(calendarEvent);
         newCourse.startDate = scrapeStartDay(calendarEvent);
         newCourse.startTime = scrapeHours(duration)[0];
@@ -103,7 +99,6 @@ public class PageScraper {
         String string = calendarEvent.selectFirst(".date").text();
         // convert the string to a proper format for Date.valuoOf()
         return Date.valueOf(string.replaceAll("/", "-"));
-
     }
 
     private Date scrapeEndDay(Element duration) {
@@ -238,6 +233,7 @@ public class PageScraper {
                 }
             }
         }
+
         return list;
     }
 }

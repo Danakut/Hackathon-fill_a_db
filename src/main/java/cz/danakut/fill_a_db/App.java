@@ -18,7 +18,6 @@ public class App {
 
         PageScraper scraper = new PageScraper(url);
         DatabaseRecorder inserter = new DatabaseRecorder();
-        Map<Course, Element> newCourses = new LinkedHashMap<>();
         int coursesInserted = 0;
 
         for (Element courseElement : scraper.scrapedElements) {
@@ -41,6 +40,7 @@ public class App {
     }
 
     private static Course makeSampleCourse() {
+        
         Course course = new Course();
         course.id = 1;
         course.type = CourseType.WORKSHOP;
@@ -70,13 +70,11 @@ public class App {
         newList.add("Markéta Stará");
         course.instructors = newList;
 
-
         LocalDateTime nowStamp = (LocalDateTime.now());
         course.lastUpdate = Timestamp.valueOf(nowStamp.getYear() + "-" + nowStamp.getMonthValue() + "-" + nowStamp.getDayOfMonth() + " " +
                 nowStamp.getHour() + ":" + nowStamp.getMinute() + ":" + nowStamp.getSecond());
 
         System.out.println(course);
         return course;
-
     }
 }

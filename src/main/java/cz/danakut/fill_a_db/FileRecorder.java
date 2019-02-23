@@ -7,8 +7,6 @@ import java.nio.charset.Charset;
 import java.nio.file.*;
 import java.nio.file.attribute.FileTime;
 import java.sql.Date;
-import java.time.LocalDate;
-import java.time.LocalTime;
 
 public class FileRecorder implements CourseRecorder {
 
@@ -83,8 +81,6 @@ public class FileRecorder implements CourseRecorder {
         System.err.format("IOException: %s%n", x);
     }
 
-
-
         String courseString = course.toString();
         try (BufferedWriter writer = Files.newBufferedWriter(path, charset)) {
             writer.write(courseString);
@@ -92,7 +88,6 @@ public class FileRecorder implements CourseRecorder {
         } catch (IOException x) {
             System.err.format("IOException: %s%n", x);
         }
-
     }
 
     private Path lookUpNewestFileInDir(Path parentDir) throws IOException {

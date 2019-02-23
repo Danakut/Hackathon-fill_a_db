@@ -7,5 +7,4 @@ public enum CourseType {
     INTENZIVNI,
     AKCE,
     NEURCENO;
-
 }

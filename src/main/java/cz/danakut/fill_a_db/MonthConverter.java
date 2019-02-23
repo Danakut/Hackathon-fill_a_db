@@ -19,6 +19,5 @@ public class MonthConverter {
             case "pro": return "12";
             default: return "0";
         }
-
     }
 }
