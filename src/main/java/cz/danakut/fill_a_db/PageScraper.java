@@ -224,8 +224,15 @@ public class PageScraper {
         if (section != null) {
             Elements instructorsP = section.select(".user-name");
             if (instructorsP != null) {
-                for (Element instructor : instructorsP)
-                    list.add(instructor.ownText().trim());
+                for (Element instructor : instructorsP) {
+                    Element function = instructor.selectFirst(".user-funkce");
+                    if (function != null) {
+                        String functionString = function.text().trim();
+                        if ( (functionString.contains("Lecturer")) || (functionString.contains("Lektorka") || (functionString.contains("Lektor")) )) {
+                            list.add(instructor.ownText().trim());
+                        }
+                    }
+                }
             }
         }
         return list;
