@@ -74,14 +74,14 @@ public class PageScraper {
         Document parsedDocument = null;
         try {
             parsedDocument = Jsoup.connect(newCourse.link).get();
+            newCourse.location = scrapeLocation(parsedDocument, newCourse.quickLocation);
+            newCourse.instructors = scrapeInstructor(parsedDocument);
+            newCourse.description = scrapeDescription(parsedDocument);
         } catch (IOException e) {
             e.printStackTrace();
         }
-        newCourse.location = scrapeLocation(parsedDocument, newCourse.quickLocation);
-        newCourse.instructors = scrapeInstructor(parsedDocument);
 
-        System.out.println(newCourse.name + ", instruktor " + newCourse.instructors);
-
+        System.out.println("Scraped: " + newCourse.name + ", " + newCourse.startDate);
         return newCourse;
     }
 
@@ -184,8 +184,11 @@ public class PageScraper {
         return attributes.get("href");
     }
 
-    private String scrapeDescription(Element calendarEvent) {
-        return calendarEvent.selectFirst(".eventDesc").text().trim();
+    private String scrapeDescription(Document parsedDocument) {
+        Element desc = parsedDocument.selectFirst(".event-descp");
+        if (desc != null) {
+            return desc.text().trim();
+        } else return "";
     }
 
     private Location scrapeLocation(Document parsedDocument, String quickLocation) {
