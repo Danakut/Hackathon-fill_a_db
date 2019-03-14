@@ -48,7 +48,11 @@ public class PageScraper {
         newCourse.name = scrapeName(calendarEvent);
         newCourse.startDate = scrapeStartDay(calendarEvent);
         newCourse.startTime = scrapeHours(duration)[0];
+        /*status is moved to partial scraping phase so that reg status can be checked and updated without needing to scrape
+        a course as a whole when it is already stored in db*/
+        newCourse.status = scrapeStatus(calendarEvent);
         newCourse.quickLocation = scrapeQuickLocation(calendarEvent);
+
 
         return newCourse;
     }
@@ -64,7 +68,6 @@ public class PageScraper {
         newCourse.endTime = scrapeHours(duration)[1];
         newCourse.topic = scrapeTopic(calendarEvent);
         newCourse.knowledgeLevel = scrapeKnowledgeLevel(calendarEvent);
-        newCourse.status = scrapeStatus(calendarEvent);
         newCourse.link = scrapeLink(attributes);
 
         Document parsedDocument = null;

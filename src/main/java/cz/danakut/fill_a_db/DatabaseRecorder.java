@@ -5,7 +5,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
-public class DatabaseRecorder implements CourseRecorder{
+public class DatabaseRecorder implements CourseRecorder {
 
     private static String dbUrl = "jdbc:mariadb://localhost:3306/hackathon";
     private static String user = "jetidea";
@@ -36,7 +36,7 @@ public class DatabaseRecorder implements CourseRecorder{
 
         PreparedStatement stmnt = null;
         try {
-            stmnt = this.conn.prepareStatement(findString);
+            stmnt = conn.prepareStatement(findString);
             stmnt.setString(1, course.name);
             stmnt.setDate(2, course.startDate);
             if (course.startTime == null) {
@@ -71,11 +71,11 @@ public class DatabaseRecorder implements CourseRecorder{
         PreparedStatement selectStmnt = null;
         PreparedStatement updateStmnt = null;
         try {
-            selectStmnt = this.conn.prepareStatement(selectQuery);
+            selectStmnt = conn.prepareStatement(selectQuery);
             selectStmnt.setDate(1, Date.valueOf(LocalDate.now()));
 
             ResultSet results = selectStmnt.executeQuery();
-            updateStmnt = this.conn.prepareStatement(updateQuery);
+            updateStmnt = conn.prepareStatement(updateQuery);
 
             while (results.next()) {
                 int id = results.getInt("id");
@@ -85,6 +85,14 @@ public class DatabaseRecorder implements CourseRecorder{
                 if (rowsAffected == 0) {
                     throw new SQLException("Updating course registration status failed.");
                 }
+            }
+
+            if (!selectStmnt.isClosed()) {
+                selectStmnt.close();
+            }
+
+            if (!updateStmnt.isClosed()) {
+                updateStmnt.close();
             }
         } catch (SQLException e) {
             System.err.println("SQLException in DatabaseRecorder.closeRegistrationOnPastCourses()");
@@ -92,32 +100,43 @@ public class DatabaseRecorder implements CourseRecorder{
         }
     }
 
-    public void updateRegistrationOnUpcomingCourses() {
-        String selectQuery = "SELECT id FROM courses WHERE startDate < ?";
-        String updateQuery = "UPDATE courses SET status = 'uzavrena' WHERE id = ?";
+    public boolean updateRegistrationStatus(int courseId, Course partiallyScrapedCourse) {
+        String selectQuery = "SELECT * FROM courses WHERE id = " + courseId;
         PreparedStatement selectStmnt = null;
-        PreparedStatement updateStmnt = null;
+        String statusFromDb = "";
+        String statusFromWeb = statusToString(partiallyScrapedCourse.status);
         try {
-            selectStmnt = this.conn.prepareStatement(selectQuery);
-            selectStmnt.setDate(1, Date.valueOf(LocalDate.now()));
-
+            selectStmnt = conn.prepareStatement(selectQuery);
             ResultSet results = selectStmnt.executeQuery();
-            updateStmnt = this.conn.prepareStatement(updateQuery);
-
-            while (results.next()) {
-                int id = results.getInt("id");
-                updateStmnt.setInt(1, id);
-
-                int rowsAffected = updateStmnt.executeUpdate();
-                if (rowsAffected == 0) {
-                    throw new SQLException("Updating course registration status failed.");
-                }
+            if (results.next()) {
+                statusFromDb = results.getString("status");
             }
+            selectStmnt.close();
         } catch (SQLException e) {
-            System.err.println("SQLException in DatabaseRecorder.closeRegistrationOnPastCourses()");
+            System.err.println("Updating course registration status failed. (Could not fetch status from db.)");
             e.printStackTrace();
         }
 
+        if (statusFromDb.equals(statusFromWeb)) {
+            return false;
+        } else {
+            int rowsAffected = 0;
+
+            String updateQuery = "UPDATE courses SET status = '" + statusFromWeb + "'" + "WHERE id = " + courseId;
+            try {
+                Statement updateStmnt = conn.createStatement();
+                rowsAffected = updateStmnt.executeUpdate(updateQuery);
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+
+            if (rowsAffected != 1) {
+                System.err.println("Updating course registration status failed. (Could not update db record with new status.)");
+                return false;
+            } else {
+                return true;
+            }
+        }
     }
 
     public void insertCourse(Course course) {
@@ -212,7 +231,8 @@ public class DatabaseRecorder implements CourseRecorder{
             case AKCE:
                 courseType = "akce";
                 break;
-            case NEURCENO: courseType = "neurceno";
+            case NEURCENO:
+                courseType = "neurceno";
         }
 
         return courseType;
@@ -233,14 +253,15 @@ public class DatabaseRecorder implements CourseRecorder{
             case NETREBA:
                 courseStatus = "netreba";
                 break;
-            case NEZJISTENO: courseStatus = "nezjisteno";
+            case NEZJISTENO:
+                courseStatus = "nezjisteno";
         }
 
         return courseStatus;
     }
 
     //returns -1 if the place is not in database yet, otherwise returns the location's id
-    private int lookUpLocationId (Location location) throws SQLException {
+    private int lookUpLocationId(Location location) throws SQLException {
         PreparedStatement stmnt = this.conn.prepareStatement("SELECT id FROM locations WHERE quickName = ?");
         stmnt.setString(1, location.quickName);
 
@@ -271,15 +292,14 @@ public class DatabaseRecorder implements CourseRecorder{
         try (ResultSet generatedKeys = stmnt.getGeneratedKeys()) {
             if (generatedKeys.next()) {
                 return generatedKeys.getInt("id");
-            }
-            else {
+            } else {
                 throw new SQLException("Failed to retrieve id for location: " + location.quickName);
             }
         }
     }
 
     //returns -1 if the instructors is not in database yet, otherwise returns the instructors's id
-    private int lookUpInstructorId (String name) throws SQLException {
+    private int lookUpInstructorId(String name) throws SQLException {
         PreparedStatement stmnt = this.conn.prepareStatement("SELECT id FROM instructors WHERE firstname = ? AND lastname = ?");
         String[] names = name.split(" ");
         //docasne reseni problemu s viceslovnymi jmeny/prijmenimi - rozpoznat, co je co - vybira pouze prvni (coz je urcite krestni jmeno) a posledni
@@ -313,8 +333,7 @@ public class DatabaseRecorder implements CourseRecorder{
         try (ResultSet generatedKeys = stmnt.getGeneratedKeys()) {
             if (generatedKeys.next()) {
                 return generatedKeys.getInt("id");
-            }
-            else {
+            } else {
                 throw new SQLException("Failed to retrieve id for instructor: " + name);
             }
         }

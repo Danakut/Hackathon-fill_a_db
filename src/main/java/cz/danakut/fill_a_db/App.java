@@ -5,6 +5,7 @@ import org.jsoup.nodes.Element;
 import java.sql.Date;
 import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.regex.Pattern;
@@ -39,7 +40,7 @@ public class App {
         for (Element courseElement : scraper.scrapedElements) {
             Course partialCourse = scraper.scrapeCoursePartially(courseElement);
 
-            //query database
+            //query database of course id
             int inDatabase = inserter.findCourse(partialCourse);
 
             //if the course is not in database yet
@@ -47,6 +48,15 @@ public class App {
                 Course completeCourse = scraper.scrapeCourseWhole(partialCourse, courseElement);
                 inserter.insertCourse(completeCourse);
                 coursesInserted++;
+            } else {
+                //consider only courses starting today or later
+                if (partialCourse.startDate.toLocalDate().compareTo(LocalDate.now()) > 0) {
+                    //check registration status in existing course and update if needed
+                    boolean courseUpdated = inserter.updateRegistrationStatus(inDatabase, partialCourse);
+                    if (courseUpdated) {
+                        System.out.println("Update kurzu " + partialCourse.name + ", nová hodnota: " + partialCourse.status);
+                    }
+                }
             }
         }
 
