@@ -1,6 +1,7 @@
 package cz.danakut.fill_a_db;
 
 import java.sql.*;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -22,7 +23,7 @@ public class DatabaseRecorder implements CourseRecorder{
         }
     }
 
-    public int findCourse(Course course) throws SQLException {
+    public int findCourse(Course course) {
         int id = -1;
 
         //solves the problem of startTime == null
@@ -32,29 +33,94 @@ public class DatabaseRecorder implements CourseRecorder{
         } else {
             findString = "SELECT id FROM courses WHERE name = ? AND startDate = ? AND startTime = ? AND quickLocation = ?";
         }
-        PreparedStatement stmnt = this.conn.prepareStatement(findString);
-        stmnt.setString(1, course.name);
-        stmnt.setDate(2, course.startDate);
-        if (course.startTime == null) {
-            stmnt.setString(3, course.quickLocation);
 
-        } else {
-            stmnt.setString(3, course.startTime);
-            stmnt.setString(4, course.quickLocation);
+        PreparedStatement stmnt = null;
+        try {
+            stmnt = this.conn.prepareStatement(findString);
+            stmnt.setString(1, course.name);
+            stmnt.setDate(2, course.startDate);
+            if (course.startTime == null) {
+                stmnt.setString(3, course.quickLocation);
+
+            } else {
+                stmnt.setString(3, course.startTime);
+                stmnt.setString(4, course.quickLocation);
+            }
+
+            ResultSet results = stmnt.executeQuery();
+            if (results.next()) {
+                id = results.getInt("id");
+            }
+
+            if (!stmnt.isClosed()) {
+                stmnt.close();
+            }
+        } catch (SQLException e) {
+            System.err.println("SQLException in DatabaseRecorder.findCourse(" + course.name + ")");
+            e.printStackTrace();
         }
 
-        ResultSet results = stmnt.executeQuery();
-        if (results.next()) {
-            id = results.getInt("id");
-        }
-
-        if (!stmnt.isClosed()) {
-            stmnt.close();
-        }
         return id;
     }
 
-    public void insertCourse(Course course) throws SQLException {
+    //redo as a db procedure?
+    public void closeRegistrationOnPastCourses() {
+        String selectQuery =
+                "SELECT id FROM courses WHERE startDate < ? AND (status = 'otevrena' OR status = 'pozdeji') ";
+        String updateQuery = "UPDATE courses SET status = 'uzavrena' WHERE id = ?";
+        PreparedStatement selectStmnt = null;
+        PreparedStatement updateStmnt = null;
+        try {
+            selectStmnt = this.conn.prepareStatement(selectQuery);
+            selectStmnt.setDate(1, Date.valueOf(LocalDate.now()));
+
+            ResultSet results = selectStmnt.executeQuery();
+            updateStmnt = this.conn.prepareStatement(updateQuery);
+
+            while (results.next()) {
+                int id = results.getInt("id");
+                updateStmnt.setInt(1, id);
+
+                int rowsAffected = updateStmnt.executeUpdate();
+                if (rowsAffected == 0) {
+                    throw new SQLException("Updating course registration status failed.");
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("SQLException in DatabaseRecorder.closeRegistrationOnPastCourses()");
+            e.printStackTrace();
+        }
+    }
+
+    public void updateRegistrationOnUpcomingCourses() {
+        String selectQuery = "SELECT id FROM courses WHERE startDate < ?";
+        String updateQuery = "UPDATE courses SET status = 'uzavrena' WHERE id = ?";
+        PreparedStatement selectStmnt = null;
+        PreparedStatement updateStmnt = null;
+        try {
+            selectStmnt = this.conn.prepareStatement(selectQuery);
+            selectStmnt.setDate(1, Date.valueOf(LocalDate.now()));
+
+            ResultSet results = selectStmnt.executeQuery();
+            updateStmnt = this.conn.prepareStatement(updateQuery);
+
+            while (results.next()) {
+                int id = results.getInt("id");
+                updateStmnt.setInt(1, id);
+
+                int rowsAffected = updateStmnt.executeUpdate();
+                if (rowsAffected == 0) {
+                    throw new SQLException("Updating course registration status failed.");
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("SQLException in DatabaseRecorder.closeRegistrationOnPastCourses()");
+            e.printStackTrace();
+        }
+
+    }
+
+    public void insertCourse(Course course) {
         String insertionString = "INSERT INTO courses (" +
                 "type, " +
                 "startDate, " +
@@ -71,60 +137,64 @@ public class DatabaseRecorder implements CourseRecorder{
                 "description" +
                 ") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
-        PreparedStatement stmnt = this.conn.prepareStatement(insertionString);
+        PreparedStatement stmnt = null;
+        try {
+            stmnt = this.conn.prepareStatement(insertionString);
+            stmnt.setString(1, typeToString(course.type));
+            stmnt.setDate(2, course.startDate);
+            stmnt.setDate(3, course.endDate);
+            stmnt.setString(4, course.startTime);
+            stmnt.setString(5, course.endTime);
+            stmnt.setString(6, course.topic);
+            stmnt.setInt(7, course.knowledgeLevel);
+            stmnt.setString(8, course.name);
+            stmnt.setString(9, statusToString(course.status));
+            stmnt.setString(10, course.quickLocation);
+            stmnt.setString(12, course.link);
+            stmnt.setString(13, course.description);
 
-        stmnt.setString(1, typeToString(course.type));
-        stmnt.setDate(2, course.startDate);
-        stmnt.setDate(3, course.endDate);
-        stmnt.setString(4, course.startTime);
-        stmnt.setString(5, course.endTime);
-        stmnt.setString(6, course.topic);
-        stmnt.setInt(7, course.knowledgeLevel);
-        stmnt.setString(8, course.name);
-        stmnt.setString(9, statusToString(course.status));
-        stmnt.setString(10, course.quickLocation);
-        stmnt.setString(12, course.link);
-        stmnt.setString(13, course.description);
-
-        //provide id from a record in "locations" table. If a matching quickLocation/quickName is not found, a new record is created and its id provided
-        int locationId = lookUpLocationId(course.location);
-        if (locationId == -1) {
-            locationId = insertNewLocation(course.location);
-        }
-        stmnt.setInt(11, locationId);
-
-        //make the insertion before processing instructors - to have a course id available (assigned automatically by the database)
-        stmnt.executeUpdate();
-
-
-        //add instructors by recording relations to courses/instructors table. If an instructor has no record in "instructors" table yet, a new record
-        //    is created and its id provided - this throws "java.sql.SQLException: Cannot add or update a child row: a foreign key constraint fails"4
-        //new approach - first make sure all instructors are in their table, THEN pair instructors with courses
-
-        List<Integer> instructorIds = new ArrayList<>();
-        for (String name : course.instructors) {
-            int id = lookUpInstructorId(name);
-            if (id == -1) {
-                id = insertNewInstructor(name);
+            //provide id from a record in "locations" table. If a matching quickLocation/quickName is not found, a new record is created and its id provided
+            int locationId = lookUpLocationId(course.location);
+            if (locationId == -1) {
+                locationId = insertNewLocation(course.location);
             }
-            instructorIds.add(id);
-        }
+            stmnt.setInt(11, locationId);
 
-        PreparedStatement instructorStmnt = this.conn.prepareStatement("INSERT INTO coursesAndInstructors VALUES (?, ?)");
+            //make the insertion before processing instructors - to have a course id available (assigned automatically by the database)
+            stmnt.executeUpdate();
 
-        for (Integer instructorId : instructorIds) {
+            //add instructors by recording relations to courses/instructors table. If an instructor has no record in "instructors" table yet, a new record
+            //    is created and its id provided - this throws "java.sql.SQLException: Cannot add or update a child row: a foreign key constraint fails"4
+            //new approach - first make sure all instructors are in their table, THEN pair instructors with courses
 
-            instructorStmnt.setInt(1, findCourse(course));
-            instructorStmnt.setInt(2, instructorId);
-
-            int rowsAffected = instructorStmnt.executeUpdate();
-            if (rowsAffected == 0) {
-                throw new SQLException("Failed to create course/instructor relation. Course: " + course.name + ", instructorId: " + instructorId);
+            List<Integer> instructorIds = new ArrayList<>();
+            for (String name : course.instructors) {
+                int id = lookUpInstructorId(name);
+                if (id == -1) {
+                    id = insertNewInstructor(name);
+                }
+                instructorIds.add(id);
             }
-        }
-        instructorStmnt.close();
 
-        stmnt.close();
+            PreparedStatement instructorStmnt = this.conn.prepareStatement("INSERT INTO coursesAndInstructors VALUES (?, ?)");
+
+            for (Integer instructorId : instructorIds) {
+
+                instructorStmnt.setInt(1, findCourse(course));
+                instructorStmnt.setInt(2, instructorId);
+
+                int rowsAffected = instructorStmnt.executeUpdate();
+                if (rowsAffected == 0) {
+                    throw new SQLException("Failed to create course/instructor relation. Course: " + course.name + ", instructorId: " + instructorId);
+                }
+            }
+            instructorStmnt.close();
+
+            stmnt.close();
+        } catch (SQLException e) {
+            System.err.println("SQLException in DatabaseRecorder.insertCourse(" + course.name + ")");
+            e.printStackTrace();
+        }
     }
 
     private String typeToString(CourseType type) {

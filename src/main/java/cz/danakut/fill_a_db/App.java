@@ -14,10 +14,26 @@ public class App {
     static String url = "https://www.czechitas.cz/cs/kalendar-akci#views:view=jplist-list-view";
     static Pattern hoursPattern = Pattern.compile("\\d{1,2}:\\d{1,2}");
 
-    public static void main(String[] args) throws SQLException {
+    public static void main(String[] args) throws Exception {
 
         PageScraper scraper = new PageScraper(url);
-        DatabaseRecorder inserter = new DatabaseRecorder();
+        DatabaseRecorder inserter = null;
+        try {
+            inserter = new DatabaseRecorder();
+        } catch (SQLException e) {
+            throw new Exception("DatabaseRecorder failed to initialize.");
+        }
+
+        scrapeForNewCourses(scraper, inserter);
+        inserter.closeRegistrationOnPastCourses();
+
+
+        inserter.closeConnection();
+
+
+    }
+
+    private static void scrapeForNewCourses(PageScraper scraper, DatabaseRecorder inserter) {
         int coursesInserted = 0;
 
         for (Element courseElement : scraper.scrapedElements) {
@@ -34,13 +50,15 @@ public class App {
             }
         }
 
-        inserter.closeConnection();
-
         System.out.println("Zapsano " + coursesInserted + " kurzu.");
     }
 
+    private static void updateCurrentCourses(PageScraper scraper, DatabaseRecorder inserter) {
+
+    }
+
     private static Course makeSampleCourse() {
-        
+
         Course course = new Course();
         course.id = 1;
         course.type = CourseType.WORKSHOP;
