@@ -177,7 +177,11 @@ public class Course {
     }
 
     public void setQuickLocation(String quickLocation) {
-        this.quickLocation = quickLocation;
+        if (quickLocation.length() > 50) {
+            this.quickLocation = quickLocation.substring(0, 50);
+        } else {
+            this.quickLocation = quickLocation;
+        }
     }
 
     public Location getLocation() {

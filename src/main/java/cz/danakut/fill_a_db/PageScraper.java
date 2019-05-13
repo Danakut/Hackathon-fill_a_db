@@ -51,6 +51,7 @@ public class PageScraper {
         /*status is moved to partial scraping phase so that reg status can be checked and updated without needing to scrape
         a course as a whole when it is already stored in db*/
         newCourse.status = scrapeStatus(calendarEvent);
+        //quickLocation limited to 50 chars by database
         newCourse.quickLocation = scrapeQuickLocation(calendarEvent);
 
 
